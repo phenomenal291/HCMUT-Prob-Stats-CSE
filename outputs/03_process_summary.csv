@@ -1,0 +1,3 @@
+"Pipeline","Rows","Numeric_Features","Binary_Before","Binary_After_Prevalence","Removed_Constant","Removed_Prevalence","Ads","NonAds"
+"drop",2035,3,1555,260,128,1295,223,1812
+"impute",2209,3,1555,211,0,1344,358,1851

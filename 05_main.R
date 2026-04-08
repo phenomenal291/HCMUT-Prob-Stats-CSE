@@ -1,0 +1,10 @@
+source("00_config.R")
+source("01_helper.R")
+source("02_loadClean.R")
+source("03_process.R")
+source("04_visualization.R")
+
+cat("Project workflow completed.\n")
+cat("Outputs folder:", OUTPUT_DIR, "\n")
+cat("Plots folder:", PLOT_DIR, "\n")
+cat("Available pipelines:", paste(names(processed_pipelines), collapse = ", "), "\n")
