@@ -145,8 +145,16 @@ boxplot(Height ~ IsAds, data = add_data,
             col = c("lightblue", "salmon"))
 dev.off()
 
+png(file.path(PLOT_DIR, "19_Boxplot_Aspect_Ratio_after_processing_by_IsAds.png"), width = 1800, height = 1600, res = 250)
+boxplot(Aspect_Ratio ~ IsAds, data = add_data,
+            main = "Boxplot of Aspect Ratio by IsAds",
+            xlab = "IsAds",
+            ylab = "Aspect Ratio",
+            col = c("lightblue", "salmon"))
+dev.off()
+
 # Scatter plot + Logistic regression line
-png(file.path(PLOT_DIR, "18_Scatter_Height_isAds.png"), width = 1600, height = 1600, res = 200)
+png(file.path(PLOT_DIR, "110_Scatter_Height_isAds.png"), width = 1600, height = 1600, res = 200)
 plot(
       add_data$Height, add_data$y,
       col = ifelse(add_data$IsAds == "ads", "red", "blue"),
@@ -164,7 +172,7 @@ legend("topright",
       col = c("red", "blue"),
       pch = 20)
 dev.off()
-png(file.path(PLOT_DIR, "19_Scatter_Width_isAds.png"), width = 1600, height = 1600, res = 200)
+png(file.path(PLOT_DIR, "111_Scatter_Width_isAds.png"), width = 1600, height = 1600, res = 200)
 plot(
       add_data$Width, add_data$y,
       col = ifelse(add_data$IsAds == "ads", "red", "blue"),
@@ -182,7 +190,7 @@ legend("topright",
       col = c("red", "blue"),
       pch = 20)
 dev.off()
-png(file.path(PLOT_DIR, "110_Scatter_Aspect_Ratio_isAds.png"), width = 1600, height = 1600, res = 200)
+png(file.path(PLOT_DIR, "112_Scatter_Aspect_Ratio_isAds.png"), width = 1600, height = 1600, res = 200)
 plot(
       add_data$Aspect_Ratio, add_data$y,
       col = ifelse(add_data$IsAds == "ads", "red", "blue"),
