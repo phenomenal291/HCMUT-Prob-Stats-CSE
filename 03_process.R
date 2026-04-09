@@ -72,18 +72,19 @@ process_one_pipeline <- function(name, pipe, min_prev = MIN_PREVALENCE, max_prev
     process_info = info
   )
 }
-# preprocessing summary table for plotting
+# correlation matrix building fo numeric features after processing
+# cor_mat <- cor(after_processed_list$drop$num[, c("Width", "Height", "Aspect_Ratio")], use = "complete.obs")
 
 
-processed_pipelines <- lapply(names(cleaned_pipelines), function(nm) {
-  process_one_pipeline(nm, cleaned_pipelines[[nm]])
+after_processed_list <- lapply(names(after_cleaning_list), function(nm) {
+  process_one_pipeline(nm, after_cleaning_list[[nm]])
 })
-names(processed_pipelines) <- names(cleaned_pipelines)
+names(after_processed_list) <- names(after_cleaning_list)
 
 process_summary <- do.call(
   rbind,
-  lapply(processed_pipelines, function(x) x$process_info)
+  lapply(after_processed_list, function(x) x$process_info)
 )
 
-write.csv(process_summary, file.path(OUTPUT_DIR, "03_process_summary.csv"), row.names = FALSE)
-saveRDS(processed_pipelines, file.path(OUTPUT_DIR, "03_processed_pipelines.rds"))
+write.csv(process_summary, file.path(OUTPUT_DIR, "after_processed_summary.csv"), row.names = FALSE)
+# saveRDS(after_processed_list, file.path(OUTPUT_DIR, "03_processed_pipelines.rds"))

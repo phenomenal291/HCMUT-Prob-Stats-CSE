@@ -42,15 +42,35 @@ num_table$Width <- suppressWarnings(as.numeric(num_table$Width))
 num_table$Height <- suppressWarnings(as.numeric(num_table$Height))
 num_table$Aspect_Ratio <- suppressWarnings(as.numeric(num_table$Aspect_Ratio))
 num_table$IsAds <- ads_convert(num_table$IsAds)
+write.csv(num_table, file.path(OUTPUT_DIR, "numeric_table_aftertypecasting.csv"), row.names = FALSE)
 
 # na count table
-num_na_count <- sapply(num_table[, numeric_feature_names, drop = FALSE], function(col) sum(is.na(col)))
-num_na_count <- data.frame(
-  Feature = names(num_na_count),
-  NA_Count = num_na_count,
-  stringsAsFactors = FALSE
+ads_table <- num_table[num_table$IsAds == "ads", , drop = FALSE]
+
+num_na_count <- do.call(
+  rbind,
+  lapply(numeric_feature_names, function(feature_name) {
+    total_count <- nrow(num_table)
+    ads_count <- nrow(ads_table)
+    na_count <- sum(is.na(num_table[[feature_name]]))
+    na_ads_count <- sum(is.na(ads_table[[feature_name]]))
+
+    row <- data.frame(
+      Feature = feature_name,
+      Total = total_count,
+      isAds = ads_count,
+      NA_count = na_count,
+      NA_isAds = na_ads_count,
+      Percent_NA_isAds = if (ads_count > 0) na_ads_count / ads_count * 100 else NA_real_,
+      stringsAsFactors = FALSE
+    )
+
+    names(row) <- c("Feature", "Total", "isAds", "NA", "NA_isAds", "%NA_isAds")
+    row
+  })
 )
-write.csv(num_na_count, file.path(OUTPUT_DIR, "01_numeric_na_count.csv"), row.names = FALSE)
+write.csv(num_na_count, file.path(OUTPUT_DIR, "numeric_na_count.csv"), row.names = FALSE)
+
 
 # binary table
 bin_table <- raw[, c(".row_id", binary_cols, ads_col_name), drop = FALSE]
@@ -61,7 +81,7 @@ names(bin_table)[ncol(bin_table)] <- "IsAds"
 num_drop <- drop_na_rows(num_table, numeric_feature_names)
 
 # numeric version 2: median impute
-num_impute <- median_impute(num_table, numeric_feature_names)
+numeric_impute <- median_impute(num_table, numeric_feature_names)
 
 # binary: drop rows with NA in binary set
 bin_clean_res <- clean_binary_rows(bin_table, binary_cols)
@@ -77,22 +97,22 @@ bin_pipeline_drop <- align_to_row_ids(bin_clean, ids_drop)
 stopifnot(identical(num_pipeline_drop$.row_id, bin_pipeline_drop$.row_id))
 
 # Pipeline 2: numeric impute + binary clean
-ids_impute <- shared_ids_in_order(num_impute$.row_id, bin_clean$.row_id)
+ids_impute <- shared_ids_in_order(numeric_impute$.row_id, bin_clean$.row_id)
 
-num_pipeline_impute <- align_to_row_ids(num_impute, ids_impute)
-bin_pipeline_impute <- align_to_row_ids(bin_clean, ids_impute)
+numeric_impute <- align_to_row_ids(numeric_impute, ids_impute)
+binary_impute <- align_to_row_ids(bin_clean, ids_impute)
 
-stopifnot(identical(num_pipeline_impute$.row_id, bin_pipeline_impute$.row_id))
+stopifnot(identical(numeric_impute$.row_id, binary_impute$.row_id))
 
 # 5. STORE CLEANED PIPELINES
-cleaned_pipelines <- list(
+after_cleaning_list <- list(
   drop = list(
     num = num_pipeline_drop,
     bin = bin_pipeline_drop
   ),
   impute = list(
-    num = num_pipeline_impute,
-    bin = bin_pipeline_impute
+    num = numeric_impute,
+    bin = binary_impute
   )
 )
 
@@ -101,19 +121,17 @@ cleaning_summary <- data.frame(
   Stage = c(
     "raw_original",
     "after_duplicate_removal",
-    "binary_clean",
-    "pipeline_drop_aligned",
-    "pipeline_impute_aligned"
+    "after_binary_cleaning",
+    "after_median_imputed"
   ),
-  Rows = c(
+  NumberofRows = c(
     original_rows,
     nrow(raw),
     nrow(bin_clean),
-    nrow(num_pipeline_drop),
-    nrow(num_pipeline_impute)
+    nrow(numeric_impute)
   ),
   stringsAsFactors = FALSE
 )
 
-write.csv(cleaning_summary, file.path(OUTPUT_DIR, "01_cleaning_summary.csv"), row.names = FALSE)
-saveRDS(cleaned_pipelines, file.path(OUTPUT_DIR, "01_cleaned_pipelines.rds"))
+write.csv(cleaning_summary, file.path(OUTPUT_DIR, "Rows_Stage_Summary.csv"), row.names = FALSE)
+# saveRDS(cleaned_pipelines, file.path(OUTPUT_DIR, "01_cleaned_pipelines.rds"))
