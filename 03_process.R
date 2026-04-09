@@ -72,6 +72,8 @@ process_one_pipeline <- function(name, pipe, min_prev = MIN_PREVALENCE, max_prev
     process_info = info
   )
 }
+# preprocessing summary table for plotting
+
 
 processed_pipelines <- lapply(names(cleaned_pipelines), function(nm) {
   process_one_pipeline(nm, cleaned_pipelines[[nm]])

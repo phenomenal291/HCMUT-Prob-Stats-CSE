@@ -3,9 +3,13 @@ source("01_helper.R")
 
 make_output_dir()
 
+numeric_feature_names <- c("Width", "Height", "Aspect_Ratio")
 
 # 1. LOAD RAW DATA
 raw_table <- read.csv(DATA_FILE, na.strings = c("?", ""), check.names = FALSE)
+raw_table[] <- lapply(raw_table, function(col) {
+  if (is.character(col)) trimws(col) else col
+})
 
 original_rows <- nrow(raw_table)
 raw_table <- raw_table[!duplicated(raw_table), , drop = FALSE]
@@ -21,6 +25,10 @@ other_cols <- setdiff(names(raw), c(".row_id", ads_col_name))
 # original dataset layout:
 # other_cols[1] = original row_id
 # other_cols[2:4] = Width, Height, Aspect_Ratio
+if (length(other_cols) < 4L) {
+  stop("Input file does not have the expected row-id + 3 numeric columns layout.")
+}
+
 orig_row_id_col <- other_cols[1]
 numeric_cols <- other_cols[2:4]
 binary_cols  <- other_cols[5:length(other_cols)]
@@ -30,13 +38,13 @@ binary_cols  <- other_cols[5:length(other_cols)]
 num_table <- raw[, c(".row_id", orig_row_id_col, numeric_cols, ads_col_name), drop = FALSE]
 names(num_table) <- c(".row_id", "row_id", "Width", "Height", "Aspect_Ratio", "IsAds")
 
-num_table$Width <- as.numeric(num_table$Width)
-num_table$Height <- as.numeric(num_table$Height)
-num_table$Aspect_Ratio <- as.numeric(num_table$Aspect_Ratio)
+num_table$Width <- suppressWarnings(as.numeric(num_table$Width))
+num_table$Height <- suppressWarnings(as.numeric(num_table$Height))
+num_table$Aspect_Ratio <- suppressWarnings(as.numeric(num_table$Aspect_Ratio))
 num_table$IsAds <- ads_convert(num_table$IsAds)
 
 # na count table
-num_na_count <- sapply(num_table[, numeric_cols], function(col) sum(is.na(col)))
+num_na_count <- sapply(num_table[, numeric_feature_names, drop = FALSE], function(col) sum(is.na(col)))
 num_na_count <- data.frame(
   Feature = names(num_na_count),
   NA_Count = num_na_count,
@@ -50,10 +58,10 @@ names(bin_table)[ncol(bin_table)] <- "IsAds"
 
 # 3. CLEAN EACH SIDE
 # numeric version 1: drop NA
-num_drop <- drop_na_rows(num_table, c("Width", "Height", "Aspect_Ratio"))
+num_drop <- drop_na_rows(num_table, numeric_feature_names)
 
 # numeric version 2: median impute
-num_impute <- median_impute(num_table, c("Width", "Height", "Aspect_Ratio"))
+num_impute <- median_impute(num_table, numeric_feature_names)
 
 # binary: drop rows with NA in binary set
 bin_clean_res <- clean_binary_rows(bin_table, binary_cols)
