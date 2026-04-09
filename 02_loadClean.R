@@ -115,6 +115,7 @@ after_cleaning_list <- list(
     bin = binary_impute
   )
 )
+write.csv(after_cleaning_list$impute$num, file.path(OUTPUT_DIR, "numeric_impute_aftercleaning.csv"), row.names = FALSE)
 
 # 6. CLEANING SUMMARY
 cleaning_summary <- data.frame(
