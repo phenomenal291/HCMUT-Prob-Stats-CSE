@@ -190,6 +190,25 @@ legend("topright",
       col = c("red", "blue"),
       pch = 20)
 dev.off()
+
+# Top 20 binary features by prevalence after processing
+binary_cols_after <- setdiff(names(add_data), c(".row_id", "Width", "Height", "Aspect_Ratio", "IsAds", "y"))
+binary_prevalence <- sapply(add_data[, binary_cols_after, drop = FALSE], function(col) mean(col == 1, na.rm = TRUE))
+top_binary_cols <- names(sort(binary_prevalence, decreasing = TRUE))[1:min(TOP_BINARY_PLOTS, length(binary_prevalence))]
+top_binary_prevalence <- sort(binary_prevalence, decreasing = TRUE)[1:min(TOP_BINARY_PLOTS, length(binary_prevalence))]
+
+png(file.path(PLOT_DIR, "111_Binary_Feature_Distribution_after_processing.png"), width = 1600, height = 1600, res = 200)
+barplot(top_binary_prevalence,
+      names.arg = top_binary_cols,
+      main = "Top Binary Indicators",
+      xlab = "Binary Features",
+      ylab = "Prevalence",
+      las = 2,
+      cex.names = 0.8,
+      ylim = c(0, max(top_binary_prevalence) * 1.1),
+      col = "lightgreen")
+dev.off()
+
 png(file.path(PLOT_DIR, "112_Scatter_Aspect_Ratio_isAds.png"), width = 1600, height = 1600, res = 200)
 plot(
       add_data$Aspect_Ratio, add_data$y,
@@ -209,20 +228,34 @@ legend("topright",
       pch = 20)
 dev.off()
 
-# Top 20 binary features by prevalence after processing
-binary_cols_after <- setdiff(names(add_data), c(".row_id", "Width", "Height", "Aspect_Ratio", "IsAds", "y"))
-binary_prevalence <- sapply(add_data[, binary_cols_after, drop = FALSE], function(col) mean(col == 1, na.rm = TRUE))
-top_binary_cols <- names(sort(binary_prevalence, decreasing = TRUE))[1:min(TOP_BINARY_PLOTS, length(binary_prevalence))]
-top_binary_prevalence <- sort(binary_prevalence, decreasing = TRUE)[1:min(TOP_BINARY_PLOTS, length(binary_prevalence))]
 
-png(file.path(PLOT_DIR, "111_Binary_Feature_Distribution_after_processing.png"), width = 1600, height = 1600, res = 200)
-barplot(top_binary_prevalence,
-      names.arg = top_binary_cols,
-      main = "Top Binary Indicators",
-      xlab = "Binary Features",
-      ylab = "Prevalence",
-      las = 2,
-      cex.names = 0.8,
-      ylim = c(0, max(top_binary_prevalence) * 1.1),
-      col = "lightgreen")
+binary_cols_after <- setdiff(names(add_data), c(".row_id", "Width", "Height", "Aspect_Ratio", "IsAds", "y"))
+
+ads_data <- add_data[add_data$IsAds == "ads", , drop = FALSE]
+nonads_data <- add_data[add_data$IsAds == "non-ads", , drop = FALSE]
+
+diff_props <- sapply(binary_cols_after, function(col) {
+  mean(ads_data[[col]] == 1, na.rm = TRUE) - 
+    mean(nonads_data[[col]] == 1, na.rm = TRUE)
+})
+
+# keep top 20 strongest differences
+top_names <- names(sort(abs(diff_props), decreasing = TRUE))[1:min(20, length(diff_props))]
+top_diff <- sort(diff_props[top_names])
+
+lim <- max(abs(top_diff))
+if (!is.finite(lim) || lim == 0) lim <- 0.1
+
+png(file.path(PLOT_DIR, "113_Difference_in_Proportions_top20.png"), width = 1800, height = 1600, res = 220)
+par(mar = c(5, 10, 4, 2))
+barplot(
+  top_diff,
+  horiz = TRUE,
+  las = 1,
+  col = ifelse(top_diff > 0, "salmon", "skyblue"),
+  xlab = "P(X = 1 | ad) - P(X = 1 | non-ad)",
+  main = "Top 20 Binary Indicators by Difference in Proportions",
+  xlim = c(-lim * 1.1, lim * 1.1)
+)
+abline(v = 0, lwd = 2)
 dev.off()

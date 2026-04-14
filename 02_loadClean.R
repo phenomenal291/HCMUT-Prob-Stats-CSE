@@ -74,7 +74,8 @@ write.csv(num_na_count, file.path(OUTPUT_DIR, "numeric_na_count.csv"), row.names
 
 # binary table
 bin_table <- raw[, c(".row_id", binary_cols, ads_col_name), drop = FALSE]
-names(bin_table)[ncol(bin_table)] <- "IsAds"
+names(bin_table) <- c(".row_id", as.character(seq_along(binary_cols)), "IsAds")
+binary_cols <- names(bin_table)[!(names(bin_table) %in% c(".row_id", "IsAds"))]
 
 # 3. CLEAN EACH SIDE
 # numeric version 1: drop NA
