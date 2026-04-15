@@ -1,0 +1,5 @@
+"Dataset","File","Model","Target","Positive_Class","Accuracy","Precision","Recall","F1","Specificity","Balanced_Accuracy","TP","FP","FN","TN"
+"impute","outputs/cleaned_data_impute.csv","Logistic","IsAds","ads",0.981900452488688,0.99009900990099,0.900900900900901,0.943396226415094,0.998188405797101,0.949544653349001,100,1,11,551
+"impute","outputs/cleaned_data_impute.csv","RandomForest","IsAds","ads",0.984917043740573,0.990291262135922,0.918918918918919,0.953271028037383,0.998188405797101,0.95855366235801,102,1,9,551
+"drop","outputs/cleaned_data_drop.csv","Logistic","IsAds","ads",0.993453355155483,1,0.942028985507246,0.970149253731343,1,0.971014492753623,65,0,4,542
+"drop","outputs/cleaned_data_drop.csv","RandomForest","IsAds","ads",0.996726677577741,0.985507246376812,0.985507246376812,0.985507246376812,0.998154981549816,0.991831113963314,68,1,1,541

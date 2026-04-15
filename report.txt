@@ -1,0 +1,179 @@
+Chapter 4: Classification Modeling and Analysis 
+
+4.1 Predictive Framework Overview 
+
+Building upon the insights gained from the exploratory data analysis, this phase of the study shifts the focus from describing historical data to forecasting future outcomes. Because the target variable dictates whether an internet entity is an advertisement ("ad.") or a standard content piece ("nonad."), this predictive task is structured as a binary classification problem. 
+
+4.1.1 Problem Formulation 
+
+The goal is to engineer a robust classification pipeline capable of parsing high-dimensional feature spaces—specifically, geometric image properties and binary text-frequency flags—to accurately label web content. To achieve a comprehensive analysis, two distinct algorithms were chosen: 
+
+    Logistic Regression: Selected as an interpretable, parametric baseline that maps linear combinations of features to class probabilities. 
+
+    Random Forest: Selected as an advanced, non-parametric ensemble method capable of handling the dataset's high dimensionality and potential non-linear interactions without requiring extensive manual feature engineering. 
+
+4.1.2 Validation Strategy 
+
+To rigorously evaluate the predictive capabilities of these models and prevent overfitting, a standard $K$-fold cross-validation strategy was utilized. While datasets with very small sample sizes often require repeated cross-validation, the Internet Advertisements dataset is sufficiently large (over 3,200 instances), making standard K-fold cross-validation optimal. 
+
+The procedure involves randomly partitioning the entire dataset into $K$ mutually exclusive subsets (folds). The model is trained iteratively $K$ times; during each iteration, K-1 folds are aggregated to train the model, while the single held-out fold is used for validation. This approach ensures that every data point is used for both training and testing, providing a robust, variance-reduced estimate of how the algorithms will perform unseen out-of-sample data. 
+
+4.1.3 Evaluation Criteria 
+
+Since the target variable is categorical, standard regression error metrics are invalid. Model efficacy is instead measured using a Confusion Matrix, which categorizes predictions into True Positives (TP), True Negatives (TN), False Positives (FP), and False Negatives (FN). From these, four primary classification metrics are derived: 
+
+    Accuracy: The ratio of correctly predicted observations to the total observations.  
+
+$$Accuracy = \frac{TP + TN}{TP + TN + FP + FN}$$ 
+
+    Precision: The ratio of correctly predicted positive observations to the total predicted positive observations. It measures the model's exactness.  
+
+$$Precision = \frac{TP}{TP + FP}$$ 
+
+    Recall (Sensitivity): The ratio of correctly predicted positive observations to the all actual positive observations. It measures the model's completeness.  
+
+$$Recall = \frac{TP}{TP + FN}$$ 
+
+    F1-Score: The weighted harmonic average of Precision and Recall. This is particularly crucial for datasets with imbalanced classes, as it punishes extreme values in either precision or recall.  
+
+$$F1 = 2 \times \frac{Precision \times Recall}{Precision + Recall}$$ 
+
+4.2 Theoretical Foundations of the Algorithms 
+
+4.2.1 The Baseline: Logistic Regression 
+
+Logistic regression is a fundamental probabilistic model belonging to the family of Generalized Linear Models (GLMs). Unlike ordinary linear regression, which predicts continuous values that can stretch to infinity, logistic regression predicts the probability of a categorical event occurring. 
+
+To achieve this, it models the natural logarithm of the odds of the target event (often called the logit link function). If $p$ is the probability of an instance being an advertisement, the log-odds are modeled as a linear combination of the input features: 
+
+$$\ln\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p$$ 
+
+By exponentiating and rearranging this algebraic formula, we arrive at the sigmoid activation function, which elegantly constraints the output bounded range between 0 and 1: 
+
+$$p(X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + ... + \beta_p X_p)}}$$ 
+
+Unlike linear regression which uses Ordinary Least Squares (OLS) to find the line of best fit, logistic regression relies on Maximum Likelihood Estimation (MLE). The MLE algorithm iteratively adjusts the coefficients ($\beta_0, ..., \beta_p$) to maximize the likelihood that the model's predicted probabilities match the actual observed class labels in the training data. By utilizing a threshold (typically 0.5), the continuous probability is ultimately converted into a discrete class label. Its inclusion in this study provides a transparent baseline where the statistical significance and impact of each feature can be directly interpreted. 
+
+4.2.2 The Ensemble: Random Forest 
+
+To fully comprehend the Random Forest algorithm, one must first understand its foundational building block: the Decision Tree. A decision tree classifies data by recursively partitioning the feature space into smaller, homogenous subsets. At each decision node, the algorithm evaluates all available features to find the split that maximizes class purity. This purity is commonly measured using Gini Impurity, which quantifies the likelihood of a randomly chosen instance being incorrectly classified if it were randomly labeled according to the distribution of classes in that subset: 
+
+$$Gini = 1 - \sum_{i=1}^{C} (p_i)^2$$ 
+
+Where $C$ is the total number of classes and $p_i$ is the probability of picking a data point belonging to class $i$. While highly interpretable, a single decision tree grown to its maximum depth is notoriously prone to high variance and severe overfitting—essentially memorizing the training data's noise. 
+
+Random Forest operates as a non-parametric ensemble learning method that overcomes this limitation by constructing a "forest" of uncorrelated decision trees. It neutralizes the overfitting tendencies of individual trees by employing two distinct stochastic processes: 
+
+    Bootstrap Aggregation (Bagging): Each constituent tree is trained on a random sample drawn with replacement from the training set. This means each tree sees a slightly different variation of the data. 
+
+    Feature Subspacing: At each node split within a tree, the algorithm considers only a random subset of features (typically $m = \sqrt{p}$), rather than the full feature space. This ensures that a single dominant feature does not dictate the structure of every tree in the forest. 
+
+The final classification is determined by aggregating the predictions of all individual trees via a majority vote. Because of this architectural design, the algorithm is highly suited for the sparse, multi-dimensional nature of the internet ads dataset. 
+
+4.3 Implementation Details and Experimental Setup
+
+4.3.1 Processed Datasets Used for Modeling
+
+To evaluate model robustness under different missing-value handling strategies, two processed datasets were used:
+
+    Impute pipeline dataset: 2,209 observations and 24 columns.
+
+    Drop pipeline dataset: 2,035 observations and 24 columns.
+
+For both datasets, the target variable is IsAds with two classes (ads, non-ads), and the positive class for metric computation is explicitly defined as ads.
+
+4.3.2 Dual Validation Design
+
+To avoid over-reliance on a single validation estimate, model performance is reported using two complementary validation tracks:
+
+    Holdout validation (single split): 70% training and 30% testing.
+
+    Stratified K-fold cross-validation: K=10 folds with class-ratio preservation in each fold.
+
+This dual design provides both a direct out-of-sample snapshot (holdout) and a variance-reduced performance estimate (10-fold CV mean and standard deviation).
+
+4.3.3 Prediction and Metric Computation Policy
+
+For Logistic Regression, predicted probabilities are converted to class labels using a 0.5 threshold. Random Forest uses direct class voting output.
+
+The main reported metrics remain Accuracy, Precision, Recall, and F1-score, computed from confusion matrix components TP, FP, FN, TN with ads as the positive class. In cross-validation, each metric is first computed per fold, then summarized as mean and standard deviation across the 10 folds.
+
+4.4 Results: Holdout (70/30) Evaluation
+
+4.4.1 Holdout Results on Impute Dataset
+
+    Logistic Regression:
+        Accuracy = 0.9819
+        Precision = 0.9901
+        Recall = 0.9009
+        F1-score = 0.9434
+
+    Random Forest:
+        Accuracy = 0.9849
+        Precision = 0.9903
+        Recall = 0.9189
+        F1-score = 0.9533
+
+Interpretation: On the imputed dataset, Random Forest outperforms Logistic Regression on all four primary metrics, with the largest gain observed in Recall and F1.
+
+4.4.2 Holdout Results on Drop Dataset
+
+    Logistic Regression:
+        Accuracy = 0.9935
+        Precision = 1.0000
+        Recall = 0.9420
+        F1-score = 0.9701
+
+    Random Forest:
+        Accuracy = 0.9967
+        Precision = 0.9855
+        Recall = 0.9855
+        F1-score = 0.9855
+
+Interpretation: On the dropped dataset, Random Forest shows the strongest overall balance between identifying ads correctly and minimizing misclassification, yielding the highest F1-score.
+
+4.5 Results: Stratified 10-Fold Cross-Validation
+
+4.5.1 Cross-Validation Results on Impute Dataset (Mean ± SD)
+
+    Logistic Regression:
+        Accuracy = 0.9760 ± 0.0096
+        Precision = 0.9763 ± 0.0332
+        Recall = 0.8743 ± 0.0550
+        F1-score = 0.9213 ± 0.0331
+
+    Random Forest:
+        Accuracy = 0.9787 ± 0.0124
+        Precision = 0.9812 ± 0.0265
+        Recall = 0.8855 ± 0.0637
+        F1-score = 0.9300 ± 0.0432
+
+Interpretation: Averaged over 10 stratified folds, Random Forest remains better on all primary metrics, although both models show lower Recall than in the single holdout split, indicating that holdout performance may be optimistic.
+
+4.5.2 Cross-Validation Results on Drop Dataset (Mean ± SD)
+
+    Logistic Regression:
+        Accuracy = 0.9912 ± 0.0060
+        Precision = 0.9791 ± 0.0394
+        Recall = 0.9423 ± 0.0548
+        F1-score = 0.9588 ± 0.0283
+
+    Random Forest:
+        Accuracy = 0.9951 ± 0.0040
+        Precision = 0.9873 ± 0.0283
+        Recall = 0.9688 ± 0.0304
+        F1-score = 0.9774 ± 0.0184
+
+Interpretation: The drop dataset again favors Random Forest, and its lower standard deviation in key metrics suggests stronger stability across folds.
+
+4.6 Comparative Discussion
+
+Across both validation tracks and both preprocessing pipelines, Random Forest consistently achieves better overall classification quality than Logistic Regression, especially in Recall and F1-score for the positive class (ads).
+
+From a practical perspective:
+
+    If interpretability is the primary objective, Logistic Regression remains a meaningful baseline.
+
+    If predictive performance is the priority, Random Forest is the preferred model in this study.
+
+Finally, reporting both holdout and stratified K-fold CV is essential: holdout offers an intuitive single-split benchmark, while CV provides a more robust estimate of generalization and mitigates split-specific bias.
