@@ -240,22 +240,56 @@ diff_props <- sapply(binary_cols_after, function(col) {
 })
 
 # keep top 20 strongest differences
-top_names <- names(sort(abs(diff_props), decreasing = TRUE))[1:min(20, length(diff_props))]
-top_diff <- sort(diff_props[top_names])
+binary_cols_after <- setdiff(
+  names(add_data),
+  c(".row_id", "Width", "Height", "Aspect_Ratio", "IsAds", "y")
+)
 
-lim <- max(abs(top_diff))
-if (!is.finite(lim) || lim == 0) lim <- 0.1
+ads_data <- add_data[add_data$IsAds == "ads", , drop = FALSE]
+nonads_data <- add_data[add_data$IsAds == "non-ads", , drop = FALSE]
 
-png(file.path(PLOT_DIR, "113_Difference_in_Proportions_top20.png"), width = 1800, height = 1600, res = 220)
+diff_props <- sapply(binary_cols_after, function(col) {
+  mean(ads_data[[col]] == 1, na.rm = TRUE) -
+    mean(nonads_data[[col]] == 1, na.rm = TRUE)
+})
+
+top_n <- 20
+
+# 1) indicators more common in ads
+ads_diff <- sort(diff_props[diff_props > 0], decreasing = TRUE)
+top_ads_diff <- ads_diff[1:min(top_n, length(ads_diff))]
+
+png(file.path(PLOT_DIR, "113_Top_Indicators_More_Common_in_Ads.png"),
+    width = 1800, height = 1600, res = 220)
 par(mar = c(5, 10, 4, 2))
 barplot(
-  top_diff,
+  rev(top_ads_diff),
   horiz = TRUE,
   las = 1,
-  col = ifelse(top_diff > 0, "salmon", "skyblue"),
-  xlab = "P(X = 1 | ad) - P(X = 1 | non-ad)",
-  main = "Top 20 Binary Indicators by Difference in Proportions",
-  xlim = c(-lim * 1.1, lim * 1.1)
+  col = "salmon",
+  xlab = "Difference",
+  xlim = c(0, 0.5),
+  main = "Top Indicators Most Common in Ads"
+  
+)
+abline(v = 0, lwd = 2)
+dev.off()
+
+# 2) indicators more common in non-ads
+nonads_diff <- sort(diff_props[diff_props < 0], decreasing = FALSE)
+top_nonads_diff <- nonads_diff[1:min(top_n, length(nonads_diff))]
+
+png(file.path(PLOT_DIR, "114_Top_Indicators_More_Common_in_NonAds.png"),
+    width = 1800, height = 1600, res = 220)
+par(mar = c(5, 10, 4, 2))
+barplot(
+  rev(top_nonads_diff),
+  horiz = TRUE,
+  las = 1,
+  col = "skyblue",
+  xlab = "Difference",
+  xlim = c(-0.1, 0),
+  main = "Top Indicators Most Common in Non-Ads"
 )
 abline(v = 0, lwd = 2)
 dev.off()

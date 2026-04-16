@@ -44,16 +44,6 @@ process_one_pipeline <- function(name, pipe, min_prev = MIN_PREVALENCE, max_prev
   num_final <- align_to_row_ids(num_iqr$data, final_ids)
   bin_final <- align_to_row_ids(bin_prev, final_ids)
 
-  # keep top 20 binary
-  binary_cols <- setdiff(names(bin_final), c(".row_id", "IsAds"))
-  top20 <- names(sort(colSums(bin_final[, binary_cols, drop = FALSE] == 1, na.rm = TRUE),
-                      decreasing = TRUE))[1:min(20, length(binary_cols))]
-  bin_final <- bin_final[, c(".row_id", top20, "IsAds"), drop = FALSE]
-  write.csv(num_final, file.path(OUTPUT_DIR, paste0(name, "_numeric_processed.csv")), row.names = FALSE)
-
-
-  stopifnot(identical(num_final$.row_id, bin_final$.row_id))
-  write.csv(bin_final, file.path(OUTPUT_DIR, paste0(name, "_binary_processed.csv")), row.names = FALSE)
 
   # 4. build analysis table
   analysis_df <- build_model_frame(num_final, bin_final)
