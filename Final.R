@@ -290,24 +290,22 @@ plot_class_count <- function(df, filename, title_text) {
 }
 
 plot_histogram <- function(values, filename, title_text, x_label, fill_color,
-                            width = 1600, height = 1600, res = 200,
-                            xlim = NULL, ylim = NULL) {
-    save_plot(filename, function() {
+                           width = 1600, height = 1600, res = 200,
+                           xlim = NULL, ylim = NULL) {
+  save_plot(filename, function() {
     hist_args <- list(
-        x = values,
-        main = title_text,
-        xlab = x_label,
-        ylab = "Frequency",
-        col = fill_color,
-        border = "black"
+      x = values,
+      main = title_text,
+      xlab = x_label,
+      ylab = "Frequency",
+      col = fill_color,
+      border = "black"
     )
-        if (!is.null(xlim)) {
-        hist_args$xlim <- xlim
-    }
-        if (!is.null(ylim)) {
-        hist_args$ylim <- ylim
-    }
-    
+
+    if (!is.null(xlim)) hist_args$xlim <- xlim
+    if (!is.null(ylim)) hist_args$ylim <- ylim
+
+    do.call(hist, hist_args)
   }, width = width, height = height, res = res)
 }
 
@@ -374,13 +372,15 @@ plot_correlation_heatmap <- function(df, filename) {
   cor_mat <- cor(df[, NUMERIC_FEATURES, drop = FALSE], use = "complete.obs")
 
   save_plot(filename, function() {
-    heatmap(
+    corrplot::corrplot(
       cor_mat,
-      Rowv = NA,
-      Colv = NA,
-      scale = "none",
-      margins = c(8, 8),
-      main = "Correlation Matrix Heatmap for Numeric Features"
+      method = "color",
+      type = "upper",
+      addCoef.col = "black",
+      tl.col = "black",
+      number.cex = 0.8,
+      title = "Correlation Matrix Heatmap for Numeric Features",
+      mar = c(0, 0, 1, 0)
     )
   }, width = 1200, height = 1600, res = 200)
 }
@@ -622,6 +622,8 @@ plot_scatter_by_class(num_table$Width, num_table$Height, num_table$IsAds,
 # -------------------------
 # 13) PLOTS AFTER PROCESSING
 # -------------------------
+
+# MEDIAN IMPUTED PIPELINE
 add_data <- after_processed_list$impute$analysis
 
 plot_class_count(add_data, "10_isAds_Count_After_Processing.png", "Number of Ads vs Non-Ads")
@@ -646,6 +648,64 @@ plot_top_binary_differences(add_data,
 
 cat("Summary of numeric variables\n")
 print(summary(num_table[, c("Width", "Height", "Aspect_Ratio")]))
+
+# DROP NA PIPELINE
+drop_data <- after_processed_list$drop$analysis
+
+plot_class_count(drop_data, "210_isAds_Count_After_Processing_DropNA.png", 
+                 "Number of Ads vs Non-Ads (Drop NA)")
+
+plot_histogram(drop_data$Width,
+               "211_Width_after_processing_hist_DropNA.png",
+               "Histogram of Width (Drop NA)",
+               "Width",
+               "salmon",
+               width = 1600, height = 1600, res = 250,
+               xlim = c(0, 150), ylim = c(0, 1200))
+
+plot_histogram(drop_data$Height,
+               "212_Height_after_processing_hist_DropNA.png",
+               "Histogram of Height (Drop NA)",
+               "Height",
+               "skyblue")
+
+plot_histogram(drop_data$Aspect_Ratio,
+               "213_Aspect_Ratio_after_processing_hist_DropNA.png",
+               "Histogram of Aspect Ratio (Drop NA)",
+               "Aspect Ratio",
+               "lightgreen")
+
+plot_correlation_heatmap(drop_data,
+                         "214_Correlation_Heatmap_after_processing_DropNA.png")
+
+plot_scatter_by_class(drop_data$Width, drop_data$Height, drop_data$IsAds,
+                      "215_Width_Height_Scatter_DropNA.png",
+                      "Width vs Height (Drop NA)", "Width", "Height")
+
+plot_boxplot_by_class(drop_data, "Width",
+                      "216_Boxplot_Width_after_processing_by_IsAds_DropNA.png")
+
+plot_boxplot_by_class(drop_data, "Height",
+                      "217_Boxplot_Height_after_processing_by_IsAds_DropNA.png")
+
+plot_boxplot_by_class(drop_data, "Aspect_Ratio",
+                      "219_Boxplot_Aspect_Ratio_after_processing_by_IsAds_DropNA.png")
+
+plot_logistic_curve(drop_data, "Height",
+                    "220_Scatter_Height_isAds_DropNA.png")
+
+plot_logistic_curve(drop_data, "Width",
+                    "221_Scatter_Width_isAds_DropNA.png")
+
+plot_logistic_curve(drop_data, "Aspect_Ratio",
+                    "222_Scatter_Aspect_Ratio_isAds_DropNA.png")
+
+plot_top_binary_prevalence(drop_data,
+                           "223_Binary_Feature_Distribution_after_processing_DropNA.png")
+
+plot_top_binary_differences(drop_data,
+                            "224_Top_Indicators_More_Common_in_Ads_DropNA.png",
+                            "225_Top_Indicators_More_Common_in_NonAds_DropNA.png")
 
 # -------------------------
 # 14) FINAL MESSAGE
