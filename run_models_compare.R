@@ -304,6 +304,35 @@ run_for_dataset <- function(label, csv_path, seed = 42) {
   log_metrics <- holdout_res$logistic_metrics
   rf_metrics <- holdout_res$rf_metrics
 
+  # --- Export Model Summaries to Text File ---
+  summary_txt_path <- file.path("outputs", paste0(label, "_model_summary.txt"))
+  cat("Saving model summaries to:", summary_txt_path, "\n")
+  sink(summary_txt_path)
+  cat("========================================\n")
+  cat("DATASET PIPELINE:", toupper(label), "\n")
+  cat("========================================\n\n")
+
+  cat("--- RANDOM FOREST MODEL SUMMARY ---\n")
+  print(holdout_res$rf_model)
+  cat("\n\n")
+
+  cat("--- LOGISTIC REGRESSION SUMMARY ---\n")
+  cat("Note: Displaying top 20 coefficients by magnitude to save space due to high dimensionality.\n")
+  log_summary <- summary(holdout_res$log_model)
+  coefs <- log_summary$coefficients
+  coefs <- coefs[!is.na(coefs[,1]), , drop = FALSE] # remove NA
+  if (nrow(coefs) > 0) {
+    sorted_idx <- order(abs(coefs[,1]), decreasing = TRUE)
+    top_coefs <- coefs[head(sorted_idx, 20), , drop = FALSE]
+    print(top_coefs)
+  } else {
+    cat("No valid coefficients found.\n")
+  }
+  cat("Null deviance:", log_summary$null.deviance, "on", log_summary$df.null, "degrees of freedom\n")
+  cat("Residual deviance:", log_summary$deviance, "on", log_summary$df.residual, "degrees of freedom\n")
+  cat("AIC:", log_summary$aic, "\n")
+  sink()
+
   cat("\n========================================\n")
   cat("Dataset:", label, "\n")
   cat("Source:", csv_path, "\n")
