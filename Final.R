@@ -708,9 +708,36 @@ plot_top_binary_differences(drop_data,
                             "225_Top_Indicators_More_Common_in_NonAds_DropNA.png")
 
 # -------------------------
-# 14) FINAL MESSAGE
+# 14) EXPORT DATA FOR MODELS
 # -------------------------
-cat("Project workflow completed.\n")
+impute_data <- after_processed_list$impute$analysis
+drop_data <- after_processed_list$drop$analysis
+
+impute_path <- file.path(OUTPUT_DIR, "cleaned_data_impute.csv")
+drop_path <- file.path(OUTPUT_DIR, "cleaned_data_drop.csv")
+default_path <- file.path(OUTPUT_DIR, "cleaned_data.csv")
+
+write.csv(impute_data, impute_path, row.names = FALSE)
+write.csv(drop_data, drop_path, row.names = FALSE)
+write.csv(impute_data, default_path, row.names = FALSE)
+
+cat("Export completed.\n")
+cat("-", impute_path, "rows:", nrow(impute_data), "cols:", ncol(impute_data), "\n")
+cat("-", drop_path, "rows:", nrow(drop_data), "cols:", ncol(drop_data), "\n")
+
+# -------------------------
+# 15) MODELS EVALUATION
+# -------------------------
+cat("\nRunning models comparison workflow (Holdout & CV)...\n")
+source("run_models_compare.R")
+
+cat("\nRunning 10-Fold Pooled CV summary...\n")
+source("run_10fold_cv.R")
+
+# -------------------------
+# 16) FINAL MESSAGE
+# -------------------------
+cat("\nProject workflow completed fully.\n")
 cat("Rows removed as duplicates:", duplicates_removed, "\n")
 cat("Outputs folder:", OUTPUT_DIR, "\n")
 cat("Plots folder:", PLOT_DIR, "\n")

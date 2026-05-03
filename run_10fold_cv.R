@@ -39,8 +39,11 @@ run_10_fold_cv <- function(csv_path, seed = 42) {
   }
   
   # 3. Initialize storage for metrics
-  res_log <- data.frame(Accuracy=numeric(k), Precision=numeric(k), Recall=numeric(k), F1=numeric(k))
-  res_rf  <- data.frame(Accuracy=numeric(k), Precision=numeric(k), Recall=numeric(k), F1=numeric(k))
+  metrics_cols <- c("Accuracy", "Precision", "Recall", "F1", "TP", "FP", "FN", "TN")
+  res_log <- data.frame(matrix(ncol = length(metrics_cols), nrow = k))
+  res_rf  <- data.frame(matrix(ncol = length(metrics_cols), nrow = k))
+  colnames(res_log) <- metrics_cols
+  colnames(res_rf) <- metrics_cols
   
   # Helper to compute core metrics
   calc_metrics <- function(pred, actual, pos_class) {
@@ -54,7 +57,7 @@ run_10_fold_cv <- function(csv_path, seed = 42) {
     rec <- ifelse((tp + fn) == 0, 0, tp / (tp + fn))
     f1 <- ifelse((prec + rec) == 0, 0, 2 * prec * rec / (prec + rec))
     
-    c(Accuracy = acc, Precision = prec, Recall = rec, F1 = f1)
+    c(Accuracy = acc, Precision = prec, Recall = rec, F1 = f1, TP = tp, FP = fp, FN = fn, TN = tn)
   }
   
   # 4. Cross-Validation Loop
@@ -90,18 +93,48 @@ run_10_fold_cv <- function(csv_path, seed = 42) {
   cat("10-Fold CV Results for Dataset:", basename(csv_path), "\n")
   cat("Format: Mean ± Std (%)\n")
   cat("========================================\n")
+
+  # Create a summary table for CV Metrics
+  cv_summary_table <- data.frame(
+    Model = c("Logistic Regression", "Random Forest"),
+    Accuracy = c(format_res(mean(res_log$Accuracy), sd(res_log$Accuracy)), 
+                 format_res(mean(res_rf$Accuracy), sd(res_rf$Accuracy))),
+    Precision = c(format_res(mean(res_log$Precision), sd(res_log$Precision)), 
+                  format_res(mean(res_rf$Precision), sd(res_rf$Precision))),
+    Recall = c(format_res(mean(res_log$Recall), sd(res_log$Recall)), 
+               format_res(mean(res_rf$Recall), sd(res_rf$Recall))),
+    F1_Score = c(format_res(mean(res_log$F1), sd(res_log$F1)), 
+                 format_res(mean(res_rf$F1), sd(res_rf$F1)))
+  )
+  print(cv_summary_table)
+
+  cat("\n========================================\n")
+  cat("Summary of Pooled CV Confusion Matrices\n")
+  cat("========================================\n")
   
-  cat("--- Logistic Regression ---\n")
-  cat(sprintf("Accuracy:  %s\n", format_res(mean(res_log$Accuracy), sd(res_log$Accuracy))))
-  cat(sprintf("Precision: %s\n", format_res(mean(res_log$Precision), sd(res_log$Precision))))
-  cat(sprintf("Recall:    %s\n", format_res(mean(res_log$Recall), sd(res_log$Recall))))
-  cat(sprintf("F1-Score:  %s\n", format_res(mean(res_log$F1), sd(res_log$F1))))
-  
-  cat("\n--- Random Forest ---\n")
-  cat(sprintf("Accuracy:  %s\n", format_res(mean(res_rf$Accuracy), sd(res_rf$Accuracy))))
-  cat(sprintf("Precision: %s\n", format_res(mean(res_rf$Precision), sd(res_rf$Precision))))
-  cat(sprintf("Recall:    %s\n", format_res(mean(res_rf$Recall), sd(res_rf$Recall))))
-  cat(sprintf("F1-Score:  %s\n", format_res(mean(res_rf$F1), sd(res_rf$F1))))
+  cat("\n--- Logistic Regression (Pooled CM) ---\n")
+  cm_log <- matrix(
+    c(sum(res_log$TP), sum(res_log$FN), 
+      sum(res_log$FP), sum(res_log$TN)), 
+    nrow = 2, byrow = FALSE,
+    dimnames = list(
+      Predicted = c(positive_label, paste0("Non-", positive_label)),
+      Actual = c(positive_label, paste0("Non-", positive_label))
+    )
+  )
+  print(as.table(cm_log))
+
+  cat("\n--- Random Forest (Pooled CM) ---\n")
+  cm_rf <- matrix(
+    c(sum(res_rf$TP), sum(res_rf$FN), 
+      sum(res_rf$FP), sum(res_rf$TN)), 
+    nrow = 2, byrow = FALSE,
+    dimnames = list(
+      Predicted = c(positive_label, paste0("Non-", positive_label)),
+      Actual = c(positive_label, paste0("Non-", positive_label))
+    )
+  )
+  print(as.table(cm_rf))
   cat("\n")
 }
 
